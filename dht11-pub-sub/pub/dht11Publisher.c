@@ -25,7 +25,7 @@
 * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 * POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
-
+#define RASPBERRY_PI  1
 #if RASPBERRY_PI
 #include <wiringPi.h>
 #endif
