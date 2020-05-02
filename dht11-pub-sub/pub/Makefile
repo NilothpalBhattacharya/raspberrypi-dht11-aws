@@ -2,7 +2,7 @@
 .prevent_execution:
 	exit 0
 
-PI_BOARD ?=
+PI_BOARD ?= 1
 
 CC = gcc
 
