@@ -16,6 +16,11 @@
 #include "aws_iot_mqtt_client_interface.h"
 
 #define HOST_ADDRESS_SIZE 255
+
+/**
+ * @Client ID
+ */
+static AWS_IoT_Client client;
 /**
  * @brief Default cert location
  */
@@ -31,20 +36,27 @@ static char HostAddress[HOST_ADDRESS_SIZE] = AWS_IOT_MQTT_HOST;
  */
 static uint32_t port = AWS_IOT_MQTT_PORT;
 
+/*************************************************************************
+ * iot_subscribe_callback_handler
+ *************************************************************************/
 static void iot_subscribe_callback_handler(AWS_IoT_Client *pClient,
-                                                                                   char *topicName,
-                                                                                   uint16_t topicNameLen,
-                                                                                  IoT_Publish_Message_Params *params,
-                                                                                  void *pData)
+                                           char *topicName,
+                                           uint16_t topicNameLen,
+                                           IoT_Publish_Message_Params *params,
+                                           void *pData)
 {
     IOT_UNUSED(pData);
     IOT_UNUSED(pClient);
-    //IOT_INFO("Subscribe callback");
-    IOT_INFO("%.*s\t%.*s", topicNameLen, topicName, (int) params->payloadLen, (char *) params->payload);
+    //IOT_INFO("%.*s\t%.*s", topicNameLen, topicName, (int) params->payloadLen, (char *) params->payload);
+    IOT_INFO("Msg: %s", (char *)params->payload);
 }
 
+/*************************************************************************
+ * disconnectCallbackHandler
+ *************************************************************************/
 static void disconnectCallbackHandler(AWS_IoT_Client *pClient,
-                                      void *data) {
+                                      void *data)
+{
     IOT_WARN("MQTT Disconnect");
     IoT_Error_t rc = FAILURE;
 
@@ -70,15 +82,15 @@ static void disconnectCallbackHandler(AWS_IoT_Client *pClient,
     }
 }
 
-static AWS_IoT_Client client;
-
-IoT_Error_t mqtt_connect(char *pClientID )
+/*************************************************************************
+ * mqtt_connect
+ *************************************************************************/
+IoT_Error_t mqtt_connect(char *pClientID)
 {
     char rootCA[PATH_MAX + 1];
     char clientCRT[PATH_MAX + 1];
     char clientKey[PATH_MAX + 1];
     char CurrentWD[PATH_MAX + 1];
-    char cPayload[100];
 
     int32_t i = 0;
 
@@ -144,11 +156,14 @@ IoT_Error_t mqtt_connect(char *pClientID )
     return rc;
 }
 
+/*************************************************************************
+ * mqtt_subscribe
+ *************************************************************************/
 IoT_Error_t mqtt_subscribe(const char *topic)
 {
     IoT_Error_t rc = FAILURE;
     IOT_INFO("Subscribing...");
-    rc = aws_iot_mqtt_subscribe(&client, topic, 11, QOS0, iot_subscribe_callback_handler, NULL);
+    rc = aws_iot_mqtt_subscribe(&client, topic, strlen(topic), QOS0, iot_subscribe_callback_handler, NULL);
 
     if (SUCCESS != rc) {
         IOT_ERROR("Error subscribing : %d ", rc);
@@ -158,13 +173,20 @@ IoT_Error_t mqtt_subscribe(const char *topic)
     return rc;
 }
 
+/*************************************************************************
+ * mqtt_display_message
+ *************************************************************************/
 void mqtt_display_message(void)
 {
      // Wait for all the messages to be received
-	 aws_iot_mqtt_yield(&client, 100);
+	 aws_iot_mqtt_yield(&client, 5000);
 }
 
-IoT_Error_t mqtt_publish(const char *topic, const char *cPayload)
+/*************************************************************************
+ * mqtt_publish
+ *************************************************************************/
+IoT_Error_t mqtt_publish(const char *topic,
+                         const char *cPayload)
 {
     IoT_Error_t rc = FAILURE;
     IoT_Publish_Message_Params paramsQOS0;
@@ -173,13 +195,10 @@ IoT_Error_t mqtt_publish(const char *topic, const char *cPayload)
     paramsQOS0.payload = (void *) cPayload;
     paramsQOS0.isRetained = 0;
     paramsQOS0.payloadLen = strlen(cPayload);
-    rc = aws_iot_mqtt_publish(&client, topic, 11, &paramsQOS0);
+    rc = aws_iot_mqtt_publish(&client, topic, strlen(topic), &paramsQOS0);
 
     if (SUCCESS != rc) {
         IOT_ERROR("An error occurred in the loop.\n");
-    }
-    else {
-       IOT_INFO("Publish done\n");
     }
 
     return rc;

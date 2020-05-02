@@ -25,7 +25,6 @@
 * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 * POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
-#define RASPBERRY_PI  1
 #if RASPBERRY_PI
 #include <wiringPi.h>
 #endif
@@ -35,6 +34,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h> // for sleep function
+#include <time.h>
 
 #include "aws_iot_mqtt_client_interface.h"
 
@@ -51,11 +51,28 @@ uint8_t pinState = HIGH;
 uint8_t dht11_data[5] = {0, 0, 0, 0, 0};
 #endif
 
-char *client_name = "dht11_node1_pub";
-const char *topic       = "node1/dht11";
-char pub_msg[128];
+char *client_name  = "dht11_node1_pub";
+const char *topic  = "node1/dht11";
+char pub_msg[255];
+char timeStr[30] = "04/29/20T20:07:57";
 
 /********************************** Local Functions *******************************/
+/********************************************************************************************
+* Function: getSystemTime
+* Description:
+********************************************************************************************/
+void getSystemTime(void)
+{
+    time_t t;
+    struct tm *tmp;
+
+    t = time(NULL);
+    tmp = localtime(&t);
+    
+    if (tmp != NULL) {
+       strftime(timeStr, sizeof(timeStr), "%DT%X", tmp);
+    }
+}
 
 #if RASPBERRY_PI
 /********************************************************************************************
@@ -79,7 +96,6 @@ static void initialize(void)
     /* Now program the data pin as INPUT to reeive the data */
     pinMode(DATA_PIN, INPUT);
     pinState = digitalRead(DATA_PIN);
-    
 }
 
 /********************************************************************************************
@@ -165,8 +181,9 @@ static int readData(void)
     //F = C * 9.0 / 5.0 + 32.0;
     
     //printf("Humidity = %2.2f %% Temperature = %2.2f C (%2.2f F)\n", H, C, F );
+    getSystemTime();
     pub_msg[0] = '\0';
-    snprintf(&pub_msg[0], 128, "{\"humidity\":%2.2f, \"temperature\":%2.2f}", H, C);
+    snprintf(&pub_msg[0], 255, "{\"time\":\"%s\", \"humidity\":%2.2f, \"temperature\":%2.2f}", timeStr, H, C);
     puts(pub_msg);
     
     return 0;
@@ -177,8 +194,9 @@ static int readData(void)
     double C = 32;
     double H = 50;
 
+    getSystemTime();
     pub_msg[0] = '\0';
-    snprintf(&pub_msg[0], 128, "{\"humidity\":%2.2f, \"temperature\":%2.2f}", H, C);
+    snprintf(&pub_msg[0], 255, "{\"time\":\"%s\", \"humidity\":%2.2f, \"temperature\":%2.2f}", timeStr, H, C);
     puts(pub_msg);
 
     return 0;
@@ -208,7 +226,6 @@ int main( void )
 #endif
         if (readData() != -1) {
             mqtt_publish(topic, pub_msg);
-            puts("\n");
             sleep(5);
         }
         else {

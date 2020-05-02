@@ -37,8 +37,8 @@ extern IoT_Error_t mqtt_subscribe(const char *topic);
 extern void mqtt_display_message(void);
 
 /********************************* Global variables ******************************/
-char *client_name = "default_sub";
-const char *topic = "node1/dht11";
+char *client_name = "temp_sub1";
+const char *topic = "node1/temperature";
 
 /********************************** Local Functions *******************************/
 
@@ -53,11 +53,9 @@ int main (int argc, char** argv)
     
     puts("MQTT SUB Test Code");
     ret = mqtt_connect(client_name);
-
     ret = mqtt_subscribe(topic);
 
-    puts("Subcriber running in while loop");
-
+    puts("Subscriber running in while loop");
     while(1) {
         mqtt_display_message();
     }

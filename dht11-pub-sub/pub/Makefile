@@ -2,6 +2,8 @@
 .prevent_execution:
 	exit 0
 
+PI_BOARD ?=
+
 CC = gcc
 
 #remove @ for no make command prints
@@ -37,7 +39,9 @@ TLS_INCLUDE_DIR = -I $(MBEDTLS_DIR)/include
 EXTERNAL_LIBS += -L$(TLS_LIB_DIR)
 LD_FLAG += -Wl,-rpath,$(TLS_LIB_DIR)
 LD_FLAG += -ldl $(TLS_LIB_DIR)/libmbedtls.a $(CRYPTO_LIB_DIR)/libmbedcrypto.a $(TLS_LIB_DIR)/libmbedx509.a -lpthread
+ifeq ($(PI_BOARD),1)
 LD_FLAG += -lwiringPi -lwiringPiDev
+endif
 
 #Aggregate all include and src directories
 INCLUDE_ALL_DIRS += $(IOT_INCLUDE_DIRS)
@@ -54,6 +58,9 @@ LOG_FLAGS += -DENABLE_IOT_WARN
 LOG_FLAGS += -DENABLE_IOT_ERROR
 
 COMPILER_FLAGS += $(LOG_FLAGS)
+ifeq ($(PI_BOARD),1)
+COMPILER_FLAGS += -DRASPBERRY_PI
+endif
 #If the processor is big endian uncomment the compiler flag
 #COMPILER_FLAGS += -DREVERSED
 
